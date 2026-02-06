@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: landing_factory
+      POSTGRES_USER: landing
+      POSTGRES_PASSWORD: landing
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    networks:
+        - lf_internal
+
+  api:
+    build:
+      context: ../apps/api
+
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql+psycopg://landing:landing@db:5432/landing_factory
+
+    ports:
+     - "8000:8000"
+
+    depends_on:
+      - db
+
+    networks:
+        - lf_internal
+
+volumes:
+  pgdata:
+
+networks:
+  lf_internal:
+    name: landing_factory_internal
+    driver: bridge
