@@ -6,7 +6,7 @@ from .types import BusinessType, PageType
 from ..services.business_service import get_business_by_slug, create_business
 from ..services.page_service import get_page, create_page, update_page_recipe, publish_page
 from ..recipes.validator import validate_recipe
-
+from ..recipes.templates import template_basic_business
 
 def _to_business_type(b) -> BusinessType:
     return BusinessType(
@@ -83,6 +83,13 @@ class Mutation:
         validate_recipe(p.recipe)  # <-- si falla, NO publica
 
         p = publish_page(db, business_slug=business_slug, page_slug=page_slug)
+        return _to_page_type(p)
+
+    @strawberry.mutation
+    def apply_template_basic(self, info, business_slug: str, page_slug: str, business_name: str) -> PageType:
+        db: Session = info.context["db"]
+        recipe = template_basic_business(business_name)
+        validated = validate_recipe(db, business_slug=business_slug, page_slug=page_slug, recipe=validated)
         return _to_page_type(p)
 
 
