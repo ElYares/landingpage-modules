@@ -29,6 +29,10 @@ services:
     depends_on:
       - db
 
+    volumes:
+      - ../apps/api:/app
+    
+
     networks:
         - lf_internal
 
