@@ -65,13 +65,6 @@ class Mutation:
         p = update_page_recipe(db, business_slug=business_slug, page_slug=page_slug, recipe=validated)
         return _to_page_type(p)
 
-
-    @strawberry.mutation
-    def publish_page(self, info, business_slug: str, page_slug: str) -> PageType:
-        db: Session = info.context["db"]
-        p = publish_page(db, business_slug=business_slug, page_slug=page_slug)
-        return _to_page_type(p)
-
     @strawberry.mutation
     def publish_page(self, info, business_slug: str, page_slug: str) -> PageType:
         db: Session = info.context["db"]
@@ -88,10 +81,17 @@ class Mutation:
     @strawberry.mutation
     def apply_template_basic(self, info, business_slug: str, page_slug: str, business_name: str) -> PageType:
         db: Session = info.context["db"]
-        recipe = template_basic_business(business_name)
-        validated = validate_recipe(db, business_slug=business_slug, page_slug=page_slug, recipe=validated)
-        return _to_page_type(p)
 
+        recipe = template_basic_business(business_name)
+        validated = validate_recipe(recipe)
+
+        p = update_page_recipe(
+            db,
+            business_slug=business_slug,
+            page_slug=page_slug,
+            recipe=validated,
+        )
+        return _to_page_type(p)
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 
