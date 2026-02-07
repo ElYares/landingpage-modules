@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from .types import BusinessType, PageType
 from ..services.business_service import get_business_by_slug, create_business
 from ..services.page_service import get_page, create_page, update_page_recipe, publish_page
+from ..recipes.validator import validate_recipe
+from ..recipes.templates import template_basic_business
 
 def _to_business_type(b) -> BusinessType:
     return BusinessType(
@@ -59,13 +61,36 @@ class Mutation:
     @strawberry.mutation
     def update_page_recipe(self, info, business_slug: str, page_slug: str, recipe: JSON) -> PageType:
         db: Session = info.context["db"]
-        p = update_page_recipe(db, business_slug=business_slug, page_slug=page_slug, recipe=recipe)
+        validated = validate_recipe(recipe)  # <-- aquí
+        p = update_page_recipe(db, business_slug=business_slug, page_slug=page_slug, recipe=validated)
         return _to_page_type(p)
 
     @strawberry.mutation
     def publish_page(self, info, business_slug: str, page_slug: str) -> PageType:
         db: Session = info.context["db"]
+
+        p = get_page(db, business_slug, page_slug)
+        if not p:
+            raise ValueError("page not found")
+
+        validate_recipe(p.recipe)  # <-- si falla, NO publica
+
         p = publish_page(db, business_slug=business_slug, page_slug=page_slug)
+        return _to_page_type(p)
+
+    @strawberry.mutation
+    def apply_template_basic(self, info, business_slug: str, page_slug: str, business_name: str) -> PageType:
+        db: Session = info.context["db"]
+
+        recipe = template_basic_business(business_name)
+        validated = validate_recipe(recipe)
+
+        p = update_page_recipe(
+            db,
+            business_slug=business_slug,
+            page_slug=page_slug,
+            recipe=validated,
+        )
         return _to_page_type(p)
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
